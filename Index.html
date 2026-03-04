@@ -1,0 +1,51 @@
+from flask import Flask, render_template, request
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+
+app = Flask(__name__)
+
+# Sample Dataset
+data = {
+    "text": [
+        "Government announces new education policy",
+        "Scientists discover cure for cancer",
+        "Aliens landed in New York yesterday",
+        "Celebrity adopts 1000 dogs from Mars",
+        "New tax reforms introduced by finance minister",
+        "Man claims he can live without food for 10 years"
+    ],
+    "label": [
+        "real",
+        "real",
+        "fake",
+        "fake",
+        "real",
+        "fake"
+    ]
+}
+
+df = pd.DataFrame(data)
+
+# Convert text to numbers
+vectorizer = TfidfVectorizer()
+X = vectorizer.fit_transform(df["text"])
+y = df["label"]
+
+# Train model
+model = MultinomialNB()
+model.fit(X, y)
+
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+@app.route("/predict", methods=["POST"])
+def predict():
+    news = request.form["news"]
+    news_vector = vectorizer.transform([news])
+    prediction = model.predict(news_vector)
+    return render_template("index.html", prediction=prediction[0].upper())
+
+if __name__ == "__main__":
+    app.run(debug=True)
