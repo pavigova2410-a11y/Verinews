@@ -1,0 +1,48 @@
+index.html
+from flask import Flask, render_template, request
+import pickle
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+
+app = Flask(__name__)
+
+# Sample training data (for demo purpose)
+news = [
+    "Government launches new healthcare scheme",
+    "Aliens landed in India yesterday",
+    "Stock market reaches record high",
+    "Drinking petrol cures corona virus",
+]
+
+labels = [1, 0, 1, 0]  # 1 = Real, 0 = Fake
+
+# Convert text into numerical form
+vectorizer = TfidfVectorizer()
+X = vectorizer.fit_transform(news)
+
+# Train simple model
+model = LogisticRegression()
+model.fit(X, labels)
+
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    input_news = request.form['news']
+    transformed_input = vectorizer.transform([input_news])
+    prediction = model.predict(transformed_input)
+
+    if prediction[0] == 1:
+        result = "Real News ✅"
+    else:
+        result = "Fake News ❌"
+
+    return render_template('index.html', prediction_text=result)
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
